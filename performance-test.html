@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slack Search Result Exporter - Performance Tests</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+    }
+    .test-suite {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .test-case {
+      margin: 5px 0;
+      padding: 5px;
+    }
+    .pass {
+      color: green;
+      font-weight: bold;
+    }
+    .fail {
+      color: red;
+      font-weight: bold;
+    }
+    .warning {
+      color: orange;
+      font-weight: bold;
+    }
+    .summary {
+      font-weight: bold;
+      margin-top: 20px;
+      padding: 10px;
+      background: #e0e0e0;
+      border-radius: 5px;
+    }
+    .metric {
+      background: #f9f9f9;
+      padding: 10px;
+      margin: 5px 0;
+      border-left: 3px solid #007bff;
+    }
+    .benchmark {
+      font-size: 0.9em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Slack Search Result Exporter - Performance Tests (Task 8.1)</h1>
+  <div id="test-results"></div>
+  <div id="summary" class="summary"></div>
+
+  <script>
+    // Performance test framework
+    class PerformanceTestRunner {
+      constructor() {
+        this.results = [];
+        this.currentSuite = null;
+      }
+
+      describe(suiteName, callback) {
+        this.currentSuite = {
+          name: suiteName,
+          tests: []
+        };
+        callback();
+        this.results.push(this.currentSuite);
+        this.currentSuite = null;
+      }
+
+      benchmark(testName, iterations, callback, targetMs) {
+        const test = {
+          name: testName,
+          passed: false,
+          duration: 0,
+          iterations: iterations,
+          targetMs: targetMs,
+          avgTime: 0,
+          error: null
+        };
+
+        try {
+          const startTime = performance.now();
+          callback(iterations);
+          const endTime = performance.now();
+
+          test.duration = endTime - startTime;
+          test.avgTime = test.duration / iterations;
+          test.passed = test.duration <= targetMs;
+        } catch (error) {
+          test.passed = false;
+          test.error = error.message;
+        }
+
+        this.currentSuite.tests.push(test);
+      }
+
+      render() {
+        const resultsDiv = document.getElementById('test-results');
+        const summaryDiv = document.getElementById('summary');
+
+        let totalTests = 0;
+        let passedTests = 0;
+        let html = '';
+
+        this.results.forEach(suite => {
+          html += `<div class="test-suite">`;
+          html += `<h2>${suite.name}</h2>`;
+
+          suite.tests.forEach(test => {
+            totalTests++;
+            const statusClass = test.passed ? 'pass' : (test.duration <= test.targetMs * 1.5 ? 'warning' : 'fail');
+            const statusIcon = test.passed ? '✓' : (test.duration <= test.targetMs * 1.5 ? '⚠' : '✗');
+
+            if (test.passed) passedTests++;
+
+            html += `<div class="test-case ${statusClass}">${statusIcon} ${test.name}</div>`;
+            html += `<div class="metric">`;
+            html += `Total Time: <strong>${test.duration.toFixed(2)}ms</strong> | `;
+            html += `Target: <strong>${test.targetMs}ms</strong> | `;
+            html += `Iterations: ${test.iterations} | `;
+            html += `Avg per iteration: ${test.avgTime.toFixed(4)}ms`;
+            html += `</div>`;
+
+            if (test.error) {
+              html += `<pre class="fail">${test.error}</pre>`;
+            }
+          });
+
+          html += `</div>`;
+        });
+
+        resultsDiv.innerHTML = html;
+
+        const failedTests = totalTests - passedTests;
+        const summaryClass = failedTests === 0 ? 'pass' : 'fail';
+        summaryDiv.innerHTML = `
+          <span class="${summaryClass}">
+            Performance Tests: ${totalTests} | Passed: ${passedTests} | Failed: ${failedTests}
+          </span>
+        `;
+      }
+    }
+
+    const runner = new PerformanceTestRunner();
+
+    // Helper function to create mock DOM elements
+    function createMockElement(html) {
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      return div;
+    }
+
+    // Import functions from main script (copy-paste for testing)
+    const escapeRegExp = (stringValue) => {
+      return stringValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+
+    const extractExternalLinks = (element) => {
+      if (!element) {
+        return [];
+      }
+
+      const links = element.querySelectorAll('a');
+      const externalLinks = Array.from(links)
+        .filter(link => /^https?:\/\//.test(link.href))
+        .map(link => ({
+          text: link.textContent,
+          url: link.href
+        }));
+
+      return externalLinks;
+    };
+
+    const convertMessageWithMarkdownLinks = (message, links) => {
+      if (!links || links.length === 0) {
+        return message;
+      }
+
+      let result = message;
+
+      links.forEach((link, index) => {
+        if (!link.text || !link.url) {
+          return;
+        }
+
+        const markdownLink = "[" + link.text + "](" + link.url + ")";
+        const escapedText = escapeRegExp(link.text);
+        const regex = new RegExp(escapedText, 'g');
+        result = result.replace(regex, markdownLink);
+      });
+
+      return result;
+    };
+
+    // ========================================
+    // TEST SUITE 8.1: Performance Tests
+    // ========================================
+
+    runner.describe('Task 8.1: パフォーマンステスト (100件のメッセージで5秒以内)', () => {
+
+      // Generate mock messages
+      function generateMockMessages(count) {
+        const messages = [];
+        for (let i = 0; i < count; i++) {
+          const html = `
+            <div class="c-search_message__content">
+              <span class="c-message__sender">User${i}</span>
+              <span class="c-timestamp__label">8:${String(i % 60).padStart(2, '0')} PM</span>
+              Message ${i}: Check out <a href="https://example${i}.com">Link ${i}</a> for more info.
+              Also visit <a href="https://github.com/repo${i}">GitHub Repo ${i}</a>.
+            </div>
+          `;
+          messages.push(createMockElement(html));
+        }
+        return messages;
+      }
+
+      runner.benchmark(
+        '100件のメッセージからリンク抽出',
+        1,
+        (iterations) => {
+          const messages = generateMockMessages(100);
+          messages.forEach(element => {
+            extractExternalLinks(element);
+          });
+        },
+        2000 // Target: 2 seconds for extraction only
+      );
+
+      runner.benchmark(
+        '100件のメッセージをMarkdown変換',
+        1,
+        (iterations) => {
+          const messages = generateMockMessages(100);
+          messages.forEach(element => {
+            const message = element.textContent;
+            const links = extractExternalLinks(element);
+            convertMessageWithMarkdownLinks(message, links);
+          });
+        },
+        5000 // Target: 5 seconds for full pipeline (Requirement 6)
+      );
+
+      runner.benchmark(
+        '単一メッセージの処理性能 (平均)',
+        100,
+        (iterations) => {
+          const messages = generateMockMessages(iterations);
+          messages.forEach(element => {
+            const message = element.textContent;
+            const links = extractExternalLinks(element);
+            convertMessageWithMarkdownLinks(message, links);
+          });
+        },
+        5000 // 100 messages in 5 seconds = 50ms average per message
+      );
+
+      runner.benchmark(
+        '複数リンク(5個)を含むメッセージの処理',
+        50,
+        (iterations) => {
+          const html = `
+            <div class="message">
+              Visit <a href="https://link1.com">Link1</a>,
+              <a href="https://link2.com">Link2</a>,
+              <a href="https://link3.com">Link3</a>,
+              <a href="https://link4.com">Link4</a>, and
+              <a href="https://link5.com">Link5</a> for resources.
+            </div>
+          `;
+
+          for (let i = 0; i < iterations; i++) {
+            const element = createMockElement(html);
+            const message = element.textContent;
+            const links = extractExternalLinks(element);
+            convertMessageWithMarkdownLinks(message, links);
+          }
+        },
+        2500 // 50 messages with 5 links each in 2.5 seconds
+      );
+
+      runner.benchmark(
+        '大量リンク(10個)を含むメッセージの処理',
+        20,
+        (iterations) => {
+          let html = '<div class="message">Resources: ';
+          for (let j = 1; j <= 10; j++) {
+            html += `<a href="https://link${j}.com">Link${j}</a>, `;
+          }
+          html += '</div>';
+
+          for (let i = 0; i < iterations; i++) {
+            const element = createMockElement(html);
+            const message = element.textContent;
+            const links = extractExternalLinks(element);
+            convertMessageWithMarkdownLinks(message, links);
+          }
+        },
+        2000 // 20 messages with 10 links each in 2 seconds
+      );
+
+      runner.benchmark(
+        'リンクなしメッセージの処理性能',
+        200,
+        (iterations) => {
+          const html = '<div class="message">This is a plain text message without any links.</div>';
+
+          for (let i = 0; i < iterations; i++) {
+            const element = createMockElement(html);
+            const message = element.textContent;
+            const links = extractExternalLinks(element);
+            convertMessageWithMarkdownLinks(message, links);
+          }
+        },
+        1000 // 200 messages without links in 1 second (should be very fast)
+      );
+
+      runner.benchmark(
+        '長文メッセージ(500文字)の処理',
+        100,
+        (iterations) => {
+          const longText = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(10);
+          const html = `<div class="message">${longText} <a href="https://example.com">Example</a></div>`;
+
+          for (let i = 0; i < iterations; i++) {
+            const element = createMockElement(html);
+            const message = element.textContent;
+            const links = extractExternalLinks(element);
+            convertMessageWithMarkdownLinks(message, links);
+          }
+        },
+        3000 // 100 long messages in 3 seconds
+      );
+
+      runner.benchmark(
+        '特殊文字を含むリンクテキストの処理',
+        100,
+        (iterations) => {
+          const html = `
+            <div class="message">
+              Check <a href="https://example.com/cpp">[C++ Guide]</a> and
+              <a href="https://example.com/regex">Regex (.*+?)</a>
+            </div>
+          `;
+
+          for (let i = 0; i < iterations; i++) {
+            const element = createMockElement(html);
+            const message = element.textContent;
+            const links = extractExternalLinks(element);
+            convertMessageWithMarkdownLinks(message, links);
+          }
+        },
+        3000 // 100 messages with special chars in 3 seconds
+      );
+    });
+
+    // Run all performance tests and render results
+    console.log('Starting performance tests...');
+    const overallStart = performance.now();
+    runner.render();
+    const overallEnd = performance.now();
+    console.log(`All performance tests completed in ${(overallEnd - overallStart).toFixed(2)}ms`);
+  </script>
+
+  <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 5px;">
+    <h3>パフォーマンス要件 (Requirement 6)</h3>
+    <p><strong>目標</strong>: 100件のメッセージで5秒以内のエクスポート完了</p>
+    <p><strong>評価基準</strong>:</p>
+    <ul>
+      <li>✓ <strong>PASS</strong>: 目標時間以内に完了</li>
+      <li>⚠ <strong>WARNING</strong>: 目標時間の1.5倍以内(最適化推奨)</li>
+      <li>✗ <strong>FAIL</strong>: 目標時間の1.5倍超過(最適化必須)</li>
+    </ul>
+    <p><strong>最適化候補</strong>:</p>
+    <ul>
+      <li>正規表現のプリコンパイル</li>
+      <li>DOM要素のキャッシング</li>
+      <li>バッチ処理の実装</li>
+    </ul>
+  </div>
+</body>
+</html>

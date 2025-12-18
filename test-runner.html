@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slack Search Result Exporter - Test Runner</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+    }
+    .test-suite {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .test-case {
+      margin: 5px 0;
+      padding: 5px;
+    }
+    .pass {
+      color: green;
+    }
+    .fail {
+      color: red;
+    }
+    .summary {
+      font-weight: bold;
+      margin-top: 20px;
+      padding: 10px;
+      background: #e0e0e0;
+      border-radius: 5px;
+    }
+    pre {
+      background: #f9f9f9;
+      padding: 10px;
+      border-left: 3px solid #ff0000;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Slack Search Result Exporter - Unit Tests</h1>
+  <div id="test-results"></div>
+  <div id="summary" class="summary"></div>
+
+  <script>
+    // Simple test framework
+    class TestRunner {
+      constructor() {
+        this.results = [];
+        this.currentSuite = null;
+      }
+
+      describe(suiteName, callback) {
+        this.currentSuite = {
+          name: suiteName,
+          tests: []
+        };
+        callback();
+        this.results.push(this.currentSuite);
+        this.currentSuite = null;
+      }
+
+      it(testName, callback) {
+        const test = {
+          name: testName,
+          passed: false,
+          error: null
+        };
+
+        try {
+          callback();
+          test.passed = true;
+        } catch (error) {
+          test.passed = false;
+          test.error = error.message;
+        }
+
+        this.currentSuite.tests.push(test);
+      }
+
+      assertEqual(actual, expected, message = '') {
+        if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+          throw new Error(`${message}\nExpected: ${JSON.stringify(expected)}\nActual: ${JSON.stringify(actual)}`);
+        }
+      }
+
+      assertTrue(condition, message = '') {
+        if (!condition) {
+          throw new Error(message || 'Expected true but got false');
+        }
+      }
+
+      assertFalse(condition, message = '') {
+        if (condition) {
+          throw new Error(message || 'Expected false but got true');
+        }
+      }
+
+      render() {
+        const resultsDiv = document.getElementById('test-results');
+        const summaryDiv = document.getElementById('summary');
+
+        let totalTests = 0;
+        let passedTests = 0;
+        let html = '';
+
+        this.results.forEach(suite => {
+          html += `<div class="test-suite">`;
+          html += `<h2>${suite.name}</h2>`;
+
+          suite.tests.forEach(test => {
+            totalTests++;
+            if (test.passed) {
+              passedTests++;
+              html += `<div class="test-case pass">✓ ${test.name}</div>`;
+            } else {
+              html += `<div class="test-case fail">✗ ${test.name}</div>`;
+              if (test.error) {
+                html += `<pre>${test.error}</pre>`;
+              }
+            }
+          });
+
+          html += `</div>`;
+        });
+
+        resultsDiv.innerHTML = html;
+
+        const failedTests = totalTests - passedTests;
+        const summaryClass = failedTests === 0 ? 'pass' : 'fail';
+        summaryDiv.innerHTML = `
+          <span class="${summaryClass}">
+            Tests: ${totalTests} | Passed: ${passedTests} | Failed: ${failedTests}
+          </span>
+        `;
+      }
+    }
+
+    const runner = new TestRunner();
+
+    // Helper function to create mock DOM elements for testing
+    function createMockElement(html) {
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      return div;
+    }
+
+    // Import functions from main script (copy-paste for testing)
+    // These are the functions we're testing
+
+    /**
+     * Escape regex meta characters
+     */
+    const escapeRegExp = (stringValue) => {
+      return stringValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+
+    /**
+     * Extract external URL links from DOM element (http/https only)
+     */
+    const extractExternalLinks = (element) => {
+      if (!element) {
+        return [];
+      }
+
+      const links = element.querySelectorAll('a');
+      const externalLinks = Array.from(links)
+        .filter(link => /^https?:\/\//.test(link.href))
+        .map(link => ({
+          text: link.textContent,
+          url: link.href
+        }));
+
+      return externalLinks;
+    };
+
+    /**
+     * Convert message with Markdown-formatted links
+     */
+    const convertMessageWithMarkdownLinks = (message, links) => {
+      if (!links || links.length === 0) {
+        return message;
+      }
+
+      let result = message;
+
+      links.forEach((link, index) => {
+        if (!link.text || !link.url) {
+          return;
+        }
+
+        const markdownLink = "[" + link.text + "](" + link.url + ")";
+        const escapedText = escapeRegExp(link.text);
+        const regex = new RegExp(escapedText, 'g');
+        result = result.replace(regex, markdownLink);
+      });
+
+      return result;
+    };
+
+    // ========================================
+    // TEST SUITE 5.1: extractExternalLinks
+    // ========================================
+
+    runner.describe('Task 5.1: extractExternalLinks function', () => {
+
+      runner.it('should return empty array when element has no links', () => {
+        const element = createMockElement('<div>Plain text without links</div>');
+        const result = extractExternalLinks(element);
+        runner.assertEqual(result, [], 'Should return empty array for no links');
+      });
+
+      runner.it('should filter only external URLs (http/https)', () => {
+        const element = createMockElement(`
+          <div>
+            <a href="https://example.com">External Link</a>
+            <a href="http://test.com">HTTP Link</a>
+          </div>
+        `);
+        const result = extractExternalLinks(element);
+        runner.assertEqual(result.length, 2, 'Should find 2 external links');
+        runner.assertTrue(result[0].url.startsWith('https://'), 'First link should be https');
+        runner.assertTrue(result[1].url.startsWith('http://'), 'Second link should be http');
+      });
+
+      runner.it('should exclude internal links (relative paths)', () => {
+        const element = createMockElement(`
+          <div>
+            <a href="https://example.com">External</a>
+            <a href="/internal/path">Internal</a>
+            <a href="#anchor">Anchor</a>
+          </div>
+        `);
+        const result = extractExternalLinks(element);
+        runner.assertEqual(result.length, 1, 'Should only find external link');
+        runner.assertEqual(result[0].text, 'External', 'Should extract correct link text');
+      });
+
+      runner.it('should exclude mailto and other non-http(s) protocols', () => {
+        const element = createMockElement(`
+          <div>
+            <a href="https://example.com">External</a>
+            <a href="mailto:test@example.com">Email</a>
+            <a href="tel:+1234567890">Phone</a>
+            <a href="ftp://files.example.com">FTP</a>
+          </div>
+        `);
+        const result = extractExternalLinks(element);
+        runner.assertEqual(result.length, 1, 'Should only find https link');
+        runner.assertEqual(result[0].url, 'https://example.com/', 'Should extract correct URL');
+      });
+
+      runner.it('should handle null/undefined element safely', () => {
+        const result1 = extractExternalLinks(null);
+        const result2 = extractExternalLinks(undefined);
+        runner.assertEqual(result1, [], 'Should return empty array for null');
+        runner.assertEqual(result2, [], 'Should return empty array for undefined');
+      });
+
+      runner.it('should extract link text and URL pairs correctly', () => {
+        const element = createMockElement(`
+          <div>
+            <a href="https://google.com">Google</a>
+            <a href="https://github.com">GitHub</a>
+          </div>
+        `);
+        const result = extractExternalLinks(element);
+        runner.assertEqual(result.length, 2, 'Should find 2 links');
+        runner.assertEqual(result[0].text, 'Google', 'First link text should be Google');
+        runner.assertEqual(result[0].url, 'https://google.com/', 'First link URL should match');
+        runner.assertEqual(result[1].text, 'GitHub', 'Second link text should be GitHub');
+        runner.assertEqual(result[1].url, 'https://github.com/', 'Second link URL should match');
+      });
+    });
+
+    // ========================================
+    // TEST SUITE 5.2: convertMessageWithMarkdownLinks
+    // ========================================
+
+    runner.describe('Task 5.2: convertMessageWithMarkdownLinks function', () => {
+
+      runner.it('should replace single link text with Markdown format', () => {
+        const message = 'Check out Google for search';
+        const links = [{ text: 'Google', url: 'https://google.com' }];
+        const result = convertMessageWithMarkdownLinks(message, links);
+        runner.assertEqual(
+          result,
+          'Check out [Google](https://google.com) for search',
+          'Should convert single link to Markdown'
+        );
+      });
+
+      runner.it('should replace multiple links in message', () => {
+        const message = 'Visit Google and GitHub for resources';
+        const links = [
+          { text: 'Google', url: 'https://google.com' },
+          { text: 'GitHub', url: 'https://github.com' }
+        ];
+        const result = convertMessageWithMarkdownLinks(message, links);
+        runner.assertEqual(
+          result,
+          'Visit [Google](https://google.com) and [GitHub](https://github.com) for resources',
+          'Should convert all links to Markdown'
+        );
+      });
+
+      runner.it('should handle duplicate link text (global replacement)', () => {
+        const message = 'Google is great, Google is fast, Google is useful';
+        const links = [{ text: 'Google', url: 'https://google.com' }];
+        const result = convertMessageWithMarkdownLinks(message, links);
+        runner.assertEqual(
+          result,
+          '[Google](https://google.com) is great, [Google](https://google.com) is fast, [Google](https://google.com) is useful',
+          'Should replace all occurrences of link text'
+        );
+      });
+
+      runner.it('should handle special characters in link text', () => {
+        const message = 'Read the [C++ Guide] for more info';
+        const links = [{ text: '[C++ Guide]', url: 'https://example.com/cpp' }];
+        const result = convertMessageWithMarkdownLinks(message, links);
+        runner.assertEqual(
+          result,
+          'Read the [[C++ Guide]](https://example.com/cpp) for more info',
+          'Should escape special regex characters in link text'
+        );
+      });
+
+      runner.it('should handle link text with dots and parentheses', () => {
+        const message = 'Visit example.com (site) for details';
+        const links = [{ text: 'example.com', url: 'https://example.com' }];
+        const result = convertMessageWithMarkdownLinks(message, links);
+        runner.assertTrue(
+          result.includes('[example.com](https://example.com)'),
+          'Should handle dots in link text'
+        );
+      });
+
+      runner.it('should return original message when links array is empty', () => {
+        const message = 'This is a message without links';
+        const links = [];
+        const result = convertMessageWithMarkdownLinks(message, links);
+        runner.assertEqual(result, message, 'Should return original message for empty links');
+      });
+
+      runner.it('should return original message when links is null/undefined', () => {
+        const message = 'This is a message';
+        const result1 = convertMessageWithMarkdownLinks(message, null);
+        const result2 = convertMessageWithMarkdownLinks(message, undefined);
+        runner.assertEqual(result1, message, 'Should handle null links');
+        runner.assertEqual(result2, message, 'Should handle undefined links');
+      });
+
+      runner.it('should skip invalid links (missing text or url)', () => {
+        const message = 'Check Google and GitHub';
+        const links = [
+          { text: 'Google', url: 'https://google.com' },
+          { text: '', url: 'https://invalid.com' }, // missing text
+          { text: 'GitHub', url: '' }, // missing url
+          { text: null, url: 'https://null.com' } // null text
+        ];
+        const result = convertMessageWithMarkdownLinks(message, links);
+        runner.assertEqual(
+          result,
+          'Check [Google](https://google.com) and GitHub',
+          'Should only convert valid links'
+        );
+      });
+
+      runner.it('should handle complex message with multiple occurrences', () => {
+        const message = 'Google search: Google. Use Google daily. Google!';
+        const links = [{ text: 'Google', url: 'https://google.com' }];
+        const result = convertMessageWithMarkdownLinks(message, links);
+        runner.assertTrue(
+          result.includes('[Google](https://google.com)'),
+          'Should replace all Google occurrences'
+        );
+        const markdownLinkCount = (result.match(/\[Google\]\(https:\/\/google\.com\)/g) || []).length;
+        runner.assertEqual(markdownLinkCount, 4, 'Should have 4 Markdown links');
+      });
+    });
+
+    // ========================================
+    // TEST SUITE 6.1: Integration Tests (DOM + Functions)
+    // ========================================
+
+    runner.describe('Task 6.1: DOM操作と関数連携のテスト', () => {
+
+      runner.it('should extract links from mock DOM element and convert to Markdown', () => {
+        const element = createMockElement(`
+          <div class="message">
+            Check out <a href="https://google.com">Google</a> for search
+          </div>
+        `);
+
+        // Integration: extractExternalLinks + convertMessageWithMarkdownLinks
+        const message = element.textContent;
+        const links = extractExternalLinks(element);
+        const result = convertMessageWithMarkdownLinks(message, links);
+
+        runner.assertTrue(
+          result.includes('[Google](https://google.com)'),
+          'Should extract and convert link to Markdown'
+        );
+      });
+
+      runner.it('should filter external/internal links and convert only external ones', () => {
+        const element = createMockElement(`
+          <div class="message">
+            Visit <a href="https://google.com">Google</a> and
+            <a href="/internal">Internal Page</a> and
+            <a href="https://github.com">GitHub</a>
+          </div>
+        `);
+
+        const message = element.textContent.trim();
+        const links = extractExternalLinks(element);
+        const result = convertMessageWithMarkdownLinks(message, links);
+
+        runner.assertEqual(links.length, 2, 'Should extract only 2 external links');
+        runner.assertTrue(
+          result.includes('[Google](https://google.com)'),
+          'Should convert Google link'
+        );
+        runner.assertTrue(
+          result.includes('[GitHub](https://github.com)'),
+          'Should convert GitHub link'
+        );
+        runner.assertTrue(
+          result.includes('Internal Page'),
+          'Should keep internal link text unchanged'
+        );
+      });
+
+      runner.it('should process multiple links in complex message', () => {
+        const element = createMockElement(`
+          <div class="message">
+            Resources: <a href="https://docs.example.com">Documentation</a>,
+            <a href="https://api.example.com">API</a>, and
+            <a href="https://github.com/example">GitHub Repo</a>
+          </div>
+        `);
+
+        const message = element.textContent.trim();
+        const links = extractExternalLinks(element);
+        const result = convertMessageWithMarkdownLinks(message, links);
+
+        runner.assertEqual(links.length, 3, 'Should extract 3 external links');
+        runner.assertTrue(
+          result.includes('[Documentation](https://docs.example.com)'),
+          'Should convert first link'
+        );
+        runner.assertTrue(
+          result.includes('[API](https://api.example.com)'),
+          'Should convert second link'
+        );
+        runner.assertTrue(
+          result.includes('[GitHub Repo](https://github.com/example)'),
+          'Should convert third link'
+        );
+      });
+
+      runner.it('should handle element with no links gracefully', () => {
+        const element = createMockElement(`
+          <div class="message">
+            This is a plain message without any links
+          </div>
+        `);
+
+        const message = element.textContent.trim();
+        const links = extractExternalLinks(element);
+        const result = convertMessageWithMarkdownLinks(message, links);
+
+        runner.assertEqual(links.length, 0, 'Should extract no links');
+        runner.assertEqual(result, message, 'Should return original message unchanged');
+      });
+
+      runner.it('should handle mixed protocols correctly', () => {
+        const element = createMockElement(`
+          <div class="message">
+            Email: <a href="mailto:test@example.com">test@example.com</a>,
+            Website: <a href="https://example.com">Example.com</a>,
+            Phone: <a href="tel:+1234567890">Call us</a>
+          </div>
+        `);
+
+        const message = element.textContent.trim();
+        const links = extractExternalLinks(element);
+        const result = convertMessageWithMarkdownLinks(message, links);
+
+        runner.assertEqual(links.length, 1, 'Should extract only https link');
+        runner.assertTrue(
+          result.includes('[Example.com](https://example.com)'),
+          'Should convert only external link'
+        );
+        runner.assertTrue(
+          result.includes('test@example.com'),
+          'Should keep email text unchanged'
+        );
+        runner.assertTrue(
+          result.includes('Call us'),
+          'Should keep phone text unchanged'
+        );
+      });
+
+      runner.it('should handle Slack-like message structure', () => {
+        const element = createMockElement(`
+          <div class="c-search_message__content">
+            <span class="c-message__sender">User123</span>
+            <span class="c-timestamp__label">8:00 PM</span>
+            Check this: <a href="https://github.com/example/repo">GitHub Repo</a>
+          </div>
+        `);
+
+        const message = element.textContent.trim();
+        const links = extractExternalLinks(element);
+        const result = convertMessageWithMarkdownLinks(message, links);
+
+        runner.assertEqual(links.length, 1, 'Should extract 1 link');
+        runner.assertEqual(links[0].text, 'GitHub Repo', 'Should extract correct link text');
+        runner.assertTrue(
+          result.includes('[GitHub Repo](https://github.com/example/repo)'),
+          'Should convert link in Slack-like structure'
+        );
+      });
+    });
+
+    // Run all tests and render results
+    runner.render();
+  </script>
+</body>
+</html>

@@ -120,11 +120,57 @@
         /* 8:00 PM */
         const timestampLabel = messageGroup.querySelector(timestampLabelSelector).textContent;
         /* twitterAPP 8:00 PM slack message here ...  */
-        const message = messageGroup.querySelector(messageContentSelector).textContent;
+        const messageElement = messageGroup.querySelector(messageContentSelector);
+
+        /* Skip if message element not found */
+        if (!messageElement) {
+          log("createPromiseGetMessages | messageElement not found, skipping");
+          return;
+        }
+
+        /* Clone the element to avoid modifying the original DOM */
+        const messageClone = messageElement.cloneNode(true);
+
+        /* Remove common Slack link preview/unfurl elements before text extraction */
+        const previewSelectors = [
+          '.c-link__label',           // Link preview label
+          '.c-message_attachment',    // Link unfurl attachments (general)
+          '.c-search_message__attachments', // Search result attachments container
+          '.c-search_message__attachment',  // Search result individual attachment
+          '.c-message__unfurl',       // Unfurl container
+          '.c-file_attachment',       // File attachments
+          '.c-message__img_attachment', // Image attachments
+          '[data-qa="message_attachment"]', // Data-qa attribute based selector
+          '.c-message_kit__attachment', // Message kit attachments
+          '.c-message_kit__file'       // Message kit files
+        ];
+        previewSelectors.forEach(selector => {
+          const elements = messageClone.querySelectorAll(selector);
+          elements.forEach(el => el.remove());
+        });
+
+        /* Convert <br> tags to newlines before getting textContent */
+        const brTags = messageClone.querySelectorAll('br');
+        brTags.forEach(br => {
+          br.replaceWith(document.createTextNode('\n'));
+        });
+
+        const message = messageClone.textContent;
+
+        /* Extract external links from cleaned clone (not original element) */
+        const externalLinks = extractExternalLinks(messageClone);
+        log("createPromiseGetMessages | Extracted " + externalLinks.length + " external links");
+        log("createPromiseGetMessages | Message before conversion: " + message);
+        const messageWithMarkdownLinks = convertMessageWithMarkdownLinks(message, externalLinks);
+        log("createPromiseGetMessages | Message after conversion: " + messageWithMarkdownLinks);
+
         const removeMessageSender = new RegExp('^' + escapeRegExp(messageSender));
         const removeTimestampLabel = new RegExp('^.*?' + timestampLabel);
         /* APP 8:00 PM slack message here ...  */
-        const trimmedMessage = message.replace(removeMessageSender, '').replace(removeTimestampLabel, '');
+        let trimmedMessage = messageWithMarkdownLinks.replace(removeMessageSender, '').replace(removeTimestampLabel, '');
+
+        /* Replace actual newlines with <br> for TSV compatibility */
+        trimmedMessage = trimmedMessage.replace(/\n/g, '<br>');
         /* 2020/12/19 20:00:20 <tab> qiita_twitter_bot <tab> twitter <tab> slack message here ...  */
         const timeAndMessage = datetime + "\t" + channelName + "\t" + messageSender + "\t" + trimmedMessage;
         log("createPromiseGetMessages | Promise | messageGroups.forEach | " + [datetime, channelName, messageSender, timestampLabel, message].join(", "));
@@ -234,6 +280,98 @@
   const escapeRegExp = (stringValue) => {
     /* $& means the whole matched string */
     return stringValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  };
+
+  /**
+   * Extract external URL links from DOM element (http/https only)
+   * @param {HTMLElement} element - Message element
+   * @returns {Array<{text: string, url: string}>} - Array of link text and URL pairs
+   */
+  const extractExternalLinks = (element) => {
+    log(">>> extractExternalLinks");
+
+    /* Handle null/undefined element */
+    if (!element) {
+      log("extractExternalLinks | element is null or undefined");
+      return [];
+    }
+
+    /* Get all <a> tags from element */
+    const links = element.querySelectorAll('a');
+    log("extractExternalLinks | Found " + links.length + " total links");
+
+    /* Filter only external URLs (http/https) and exclude Slack internal links */
+    const externalLinks = Array.from(links)
+      .filter(link => {
+        /* Check if URL starts with http/https */
+        if (!/^https?:\/\//.test(link.href)) {
+          return false;
+        }
+        /* Exclude Slack workspace URLs (e.g., https://xxx.slack.com/...) */
+        if (/^https?:\/\/[^/]+\.slack\.com\//.test(link.href)) {
+          return false;
+        }
+        return true;
+      })
+      .map(link => {
+        /* Get only the direct text content of the link, excluding nested elements */
+        let linkText = '';
+        for (let node of link.childNodes) {
+          if (node.nodeType === Node.TEXT_NODE) {
+            linkText += node.textContent;
+          }
+        }
+        /* If no direct text nodes, fall back to textContent (trimmed) */
+        if (!linkText.trim()) {
+          linkText = link.textContent.trim();
+        }
+        return {
+          text: linkText.trim(),
+          url: link.href
+        };
+      });
+
+    log("extractExternalLinks | Filtered to " + externalLinks.length + " external links");
+    return externalLinks;
+  };
+
+  /**
+   * Convert message with Markdown-formatted links
+   * @param {string} message - Original message text
+   * @param {Array<{text: string, url: string}>} links - Array of link objects
+   * @returns {string} - Message with Markdown-formatted links
+   */
+  const convertMessageWithMarkdownLinks = (message, links) => {
+    log(">>> convertMessageWithMarkdownLinks");
+
+    /* Handle empty links array - return message as-is */
+    if (!links || links.length === 0) {
+      log("convertMessageWithMarkdownLinks | No links to convert");
+      return message;
+    }
+
+    log("convertMessageWithMarkdownLinks | Converting " + links.length + " links");
+    let result = message;
+
+    /* Replace each link text with Markdown format [text](url) */
+    links.forEach((link, index) => {
+      /* Skip if link text or url is missing */
+      if (!link.text || !link.url) {
+        log("convertMessageWithMarkdownLinks | Skipping invalid link at index " + index);
+        return;
+      }
+
+      const markdownLink = "[" + link.text + "](" + link.url + ")";
+      const escapedText = escapeRegExp(link.text);
+
+      /* Replace all occurrences of link text with Markdown format (global flag) */
+      const regex = new RegExp(escapedText, 'g');
+      result = result.replace(regex, markdownLink);
+
+      log("convertMessageWithMarkdownLinks | Replaced '" + link.text + "' with '" + markdownLink + "'");
+    });
+
+    return result;
   };
 
   /**

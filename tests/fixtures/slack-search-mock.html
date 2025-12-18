@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Slack Search Results - Mock</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .c-search_message__content { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+    .c-message_group { margin-bottom: 15px; }
+    .c-timestamp { color: #666; font-size: 12px; }
+    .c-timestamp__label { margin-left: 5px; }
+    .c-message__sender_button { font-weight: bold; }
+    [data-qa="inline_channel_entity__name"] { color: #1264a3; }
+  </style>
+</head>
+<body>
+
+<!-- Test Case 1: Message with no links -->
+<div class="c-message_group" role="document">
+  <span class="c-timestamp" data-ts="1703001600.123"></span>
+  <div class="c-search_message__content">
+    <span data-qa="inline_channel_entity__name">general</span>
+    <span class="c-message__sender_button">TestUser1</span>
+    <span class="c-timestamp__label">8:00 AM</span>
+    This is a plain text message without any links.
+  </div>
+</div>
+
+<!-- Test Case 2: Single external URL -->
+<div class="c-message_group" role="document">
+  <span class="c-timestamp" data-ts="1703005200.456"></span>
+  <div class="c-search_message__content">
+    <span data-qa="inline_channel_entity__name">random</span>
+    <span class="c-message__sender_button">TestUser2</span>
+    <span class="c-timestamp__label">9:00 AM</span>
+    Check out <a href="https://github.com">github.com</a> for code repositories.
+  </div>
+</div>
+
+<!-- Test Case 3: Multiple external URLs -->
+<div class="c-message_group" role="document">
+  <span class="c-timestamp" data-ts="1703008800.789"></span>
+  <div class="c-search_message__content">
+    <span data-qa="inline_channel_entity__name">tech</span>
+    <span class="c-message__sender_button">TestUser3</span>
+    <span class="c-timestamp__label">10:00 AM</span>
+    Visit <a href="https://google.com">google.com</a> for search and <a href="https://github.com">github.com</a> for code.
+  </div>
+</div>
+
+<!-- Test Case 4: Internal link + External URL -->
+<div class="c-message_group" role="document">
+  <span class="c-timestamp" data-ts="1703012400.111"></span>
+  <div class="c-search_message__content">
+    <span data-qa="inline_channel_entity__name">support</span>
+    <span class="c-message__sender_button">TestUser4</span>
+    <span class="c-timestamp__label">11:00 AM</span>
+    See #general channel and <a href="https://example.com">example.com</a>
+  </div>
+</div>
+
+<!-- Test Case 5: URL with special characters (query params) -->
+<div class="c-message_group" role="document">
+  <span class="c-timestamp" data-ts="1703016000.222"></span>
+  <div class="c-search_message__content">
+    <span data-qa="inline_channel_entity__name">docs</span>
+    <span class="c-message__sender_button">TestUser5</span>
+    <span class="c-timestamp__label">12:00 PM</span>
+    Documentation: <a href="https://example.com/search?query=hello%20world&lang=ja">example.com/search?query=hello world&lang=ja</a>
+  </div>
+</div>
+
+<!-- Test Case 6: Link text with special characters -->
+<div class="c-message_group" role="document">
+  <span class="c-timestamp" data-ts="1703019600.333"></span>
+  <div class="c-search_message__content">
+    <span data-qa="inline_channel_entity__name">programming</span>
+    <span class="c-message__sender_button">TestUser6</span>
+    <span class="c-timestamp__label">1:00 PM</span>
+    <a href="https://cppreference.com">[C++ Guide]</a>
+    Regex <a href="https://example.com/regex">(.*+?)</a>
+  </div>
+</div>
+
+<!-- Test Case 7: Message with tabs (TSV integrity test) -->
+<div class="c-message_group" role="document">
+  <span class="c-timestamp" data-ts="1703023200.444"></span>
+  <div class="c-search_message__content">
+    <span data-qa="inline_channel_entity__name">data</span>
+    <span class="c-message__sender_button">TestUser7</span>
+    <span class="c-timestamp__label">2:00 PM</span>
+    Column1	Column2	Column3
+  </div>
+</div>
+
+<!-- Test Case 8: Multi-line message (TSV integrity test) -->
+<div class="c-message_group" role="document">
+  <span class="c-timestamp" data-ts="1703026800.555"></span>
+  <div class="c-search_message__content">
+    <span data-qa="inline_channel_entity__name">notes</span>
+    <span class="c-message__sender_button">TestUser8</span>
+    <span class="c-timestamp__label">3:00 PM</span>
+    Line 1
+Line 2
+Line 3
+  </div>
+</div>
+
+<!-- Test Case 9: Direct message (no channel) -->
+<div class="c-message_group" role="document">
+  <span class="c-timestamp" data-ts="1703030400.666"></span>
+  <div class="c-search_message__content">
+    <span class="c-message__sender_button">TestUser9</span>
+    <span class="c-timestamp__label">4:00 PM</span>
+    Private message with <a href="https://private.example.com">private.example.com</a>
+  </div>
+</div>
+
+<!-- Test Case 10: XSS test - dangerous protocols should be filtered -->
+<div class="c-message_group" role="document">
+  <span class="c-timestamp" data-ts="1703034000.777"></span>
+  <div class="c-search_message__content">
+    <span data-qa="inline_channel_entity__name">security</span>
+    <span class="c-message__sender_button">TestUser10</span>
+    <span class="c-timestamp__label">5:00 PM</span>
+    Safe: <a href="https://safe.com">safe.com</a>
+    Unsafe: <a href="javascript:alert('xss')">javascript link</a>
+    Data: <a href="data:text/html,<script>alert('xss')</script>">data link</a>
+  </div>
+</div>
+
+<!-- Pagination controls -->
+<div class="c-pagination">
+  <button class="c-pagination__arrow_btn" aria-label="Next page" aria-disabled="true">Next</button>
+</div>
+
+</body>
+</html>

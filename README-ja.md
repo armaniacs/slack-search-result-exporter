@@ -53,7 +53,7 @@ Slack検索結果のメッセージをTSV形式でエクスポートします。
 ## インストール
 
 ### 方法1: クイックインストール（推奨）
-1. [slack-search-result-exporter.user.js](https://github.com/xshoji/slack-search-result-exporter/blob/main/slack-search-result-exporter.user.js) を開く
+1. [slack-search-result-exporter.user.js](slack-search-result-exporter.user.js) を開く
 2. **ファイル全体の内容**をコピー（`javascript:(function(){...` で始まる）
 3. ブラウザで新しいブックマークを作成:
    - **Chrome**: ブックマーク → ページを追加 (Cmd/Ctrl+D)

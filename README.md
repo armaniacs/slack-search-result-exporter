@@ -53,7 +53,7 @@ Exported data is in TSV (Tab-Separated Values) format with 4 columns:
 ## Installation
 
 ### Option 1: Quick Install (Recommended)
-1. Open [slack-search-result-exporter.user.js](https://github.com/xshoji/slack-search-result-exporter/blob/main/slack-search-result-exporter.user.js)
+1. Open [slack-search-result-exporter.user.js](slack-search-result-exporter.user.js)
 2. Copy the **entire file contents** (starts with `javascript:(function(){...`)
 3. Create a new bookmark in your browser:
    - **Chrome**: Bookmarks → Add page (Cmd/Ctrl+D)

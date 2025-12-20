@@ -11,12 +11,17 @@
     "test:browser-compat": "playwright test browser-compatibility",
     "test:security": "playwright test security-validation",
     "test:ui": "playwright test --ui",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "build": "tsc",
+    "watch": "tsc -w"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.57.0"
+    "@playwright/test": "^1.57.0",
+    "@types/chrome": "^0.1.32",
+    "@types/node": "^25.0.3",
+    "typescript": "^5.9.3"
   }
 }

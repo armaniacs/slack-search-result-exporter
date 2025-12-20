@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Slack Channel Mock</title>
+</head>
+<body>
+    <div class="p-workspace__primary_view" role="main">
+        <div class="p-view_header">
+            <span data-qa="channel_name">#general</span>
+        </div>
+        <div class="c-virtual_list" role="list">
+            <!-- Message 1 -->
+            <div class="c-virtual_list__item" role="listitem">
+                <div class="c-message_kit__gutter">
+                    <div class="c-message_kit__gutter__right">
+                        <span class="c-message__sender">
+                            <a class="c-message__sender_link">User A</a>
+                        </span>
+                        <a class="c-timestamp">
+                            <span class="c-timestamp__label">10:00 AM</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="c-message_kit__blocks">
+                    <div class="c-message__body">Hello world</div>
+                </div>
+            </div>
+            <!-- Message 2 -->
+            <div class="c-virtual_list__item" role="listitem">
+                <div class="c-message_kit__gutter">
+                    <div class="c-message_kit__gutter__right">
+                        <span class="c-message__sender">
+                            <button class="c-message__sender_button">User B</button>
+                        </span>
+                        <a class="c-timestamp">
+                            <span class="c-timestamp__label">10:05 AM</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="c-message_kit__blocks">
+                    <div class="c-message__body">Test message</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

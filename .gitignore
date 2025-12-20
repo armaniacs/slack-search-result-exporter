@@ -19,11 +19,12 @@ tmp/
 
 # Node modules
 node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+dist/
 
-# Playwright
-test-results/
-playwright-report/
-playwright/.cache/
 
 # Test artifacts
 *.log

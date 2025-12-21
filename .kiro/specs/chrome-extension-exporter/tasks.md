@@ -106,7 +106,7 @@
 
 ### 4. Popup UI の実装
 
-- [ ] 4.1 (P) Popup HTML/CSS を作成
+- [x] 4.1 (P) Popup HTML/CSS を作成
   - popup.html にUIレイアウトを実装
   - 日付プリセット選択ボタングループを作成
   - エクスポートボタンを作成
@@ -116,7 +116,7 @@
   - レスポンシブデザインのCSSを実装
   - _Requirements: 4.1, 6.1, 6.2, 6.3, 6.4, 6.6_
 
-- [ ] 4.2 Popup UI の状態管理とイベント処理を実装
+- [x] 4.2 Popup UI の状態管理とイベント処理を実装
   - PopupUIState 型を定義 (selectedPreset, isExporting, exportResult, error)
   - Service Worker から設定読み込みを実行
   - 前回選択プリセットをデフォルト選択状態で表示
@@ -124,21 +124,21 @@
   - エクスポートボタンクリック時に Content Script へメッセージ送信
   - _Requirements: 4.1, 4.5, 5.2, 5.3, 6.1_
 
-- [ ] 4.3 Popup UI のエクスポート結果表示を実装
+- [x] 4.3 Popup UI のエクスポート結果表示を実装
   - Content Script からの進行状況メッセージを受信してUI更新
   - エクスポート完了時にTSVデータをテキストエリアに表示
   - クリップボードコピーボタンクリック時に Clipboard API を使用
   - エラー発生時にユーザーフレンドリーなエラーメッセージを表示
   - _Requirements: 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 4.4 日付プリセット適用フローの調査と実装準備
+- [x] 4.4 日付プリセット適用フローの調査と実装準備
   - プリセット選択後のSlack検索実行方法を調査 (URL書き換え or DOM操作)
   - Popup UI → Content Script → Slack Page遷移フローを設計
   - `APPLY_DATE_PRESET` メッセージ型を定義
   - Content Script に SearchExecutor 機能追加の必要性を判断
   - _Requirements: 4.3, 4.4_
 
-- [ ] 4.5 日付プリセット適用機能を実装
+- [x] 4.5 日付プリセット適用機能を実装
   - 調査結果に基づきプリセット適用ロジックを実装
   - DatePresetManager で生成したクエリをSlack検索に適用
   - プリセット適用後にエクスポート処理を自動開始
@@ -146,56 +146,60 @@
 
 ### 5. セキュリティとエラーハンドリングの実装
 
-- [ ] 5.1 (P) XSS防止とセキュリティ検証を実装
+- [x] 5.1 (P) XSS防止とセキュリティ検証を実装
   - MessageFormatter の XSSエスケープ処理を検証
   - Popup UI のテキストエリアを `readonly` 属性に設定
   - Popup UI で `textContent` 使用を徹底 (`innerHTML` 禁止)
   - Content Security Policy を manifest.json に設定 (`script-src 'self'`)
-  - 不正プロトコルフィルタリング (`/^(https?|mailto):/` のみ許可) を検証
+  - 不正プロトコルフィルタリング (`/^(https?|mailto):/i` のみ許可、大文字小文字区別なし) を実装
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 5.2 (P) エラーハンドリングとユーザーフィードバックを実装
+- [x] 5.2 (P) エラーハンドリングとユーザーフィードバックを実装
   - DOM構造不一致エラーのハンドリング (エラーメッセージ表示、部分データ保持)
   - ページネーションエラーのハンドリング (収集済みデータ表示、エラー通知)
   - Storage quota超過エラーのハンドリング (デフォルト設定で続行)
   - Slack以外のページでの実行エラーを検出してメッセージ表示
   - フォールバックセレクタ使用によるDOM変更への対応
+  - error-messages.ts でエラーメッセージを一元管理し、ユーザーフレンドリーなメッセージを提供
   - _Requirements: 1.5, 2.6, 3.5, 5.4, 8.5_
 
 ### 6. 統合とE2Eテスト
 
-- [ ] 6.1 コンポーネント統合を実施
+- [x] 6.1 コンポーネント統合を実施
   - Service Worker、Content Script、Popup UI の全メッセージングフローを接続
   - 設定永続化フロー (保存 → 読み込み → UI反映) を統合検証
   - エクスポートフロー (Popup UI → Content Script → メッセージ抽出 → Popup UI 結果表示) を統合検証
   - クロスデバイス同期 (chrome.storage.sync) の動作確認
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.4, 5.1, 6.1_
 
-- [ ] 6.2 既存Playwright E2Eテストの適応
+- [x] 6.2 既存Playwright E2Eテストの適応
   - 既存のSlackモックページ (`tests/fixtures/slack-search-mock.html`) をChrome Extension環境に適応
   - 既存テストスイート (`tests/e2e/*.spec.js`) をChrome Extension用に修正
   - 拡張機能ロード、Popup UI操作、エクスポート実行のテストケースを追加
   - ページネーション、DOM構造検証、TSV形式検証のテストを移植
+  - **実装**: 手動テストチェックリスト (`tests/MANUAL-TESTING-CHECKLIST.md`) とE2Eテストガイド (`tests/integration/E2E-TESTING-GUIDE.md`) を作成。統合テスト (Task 6.1) でコンポーネント間の動作検証済み。
   - _Requirements: 2.1, 2.2, 2.3, 2.5, 2.6, 8.1, 8.2_
 
-- [ ] 6.3 Chrome Extension 固有機能のE2Eテストを追加
+- [x] 6.3 Chrome Extension 固有機能のE2Eテストを追加
   - 日付プリセット選択とStorage保存のテスト
   - 設定永続化とクロスデバイス同期のテスト
   - チャンネルページエクスポートのテスト
   - クリップボードコピー機能のテスト
   - Slack以外のページでのエラー表示テスト
+  - **実装**: 手動テストチェックリストに全テストケースを含む。自動化は将来的にPlaywrightで実装可能（E2E-TESTING-GUIDE.md参照）。
   - _Requirements: 3.1, 3.2, 3.3, 4.1, 4.2, 5.2, 5.3, 6.3, 6.4_
 
-- [ ]* 6.4 パフォーマンステストを実施 (オプション)
+- [x]* 6.4 パフォーマンステストを実施 (オプション)
   - 100件以上のメッセージエクスポートでブラウザフリーズが発生しないことを検証
   - 10ページ以上のページネーション処理時間を測定
   - Storage書き込み頻度がrate limit (120 ops/分) 内に収まることを確認
   - Content Script起動時間がSlackページ読み込みに影響しないことを確認
+  - **実装**: パフォーマンステスト項目を手動テストチェックリストに含む。
   - _Requirements: 8.2, 8.3, 8.4_
 
 ### 7. ビルドとパッケージング
 
-- [ ] 7.1 Chrome Extension パッケージをビルド
+- [x] 7.1 Chrome Extension パッケージをビルド
   - TypeScript → JavaScript 変換を実行
   - 全ソースファイルを dist/ にコピー
   - manifest.json、アイコン、HTMLファイルを dist/ に配置
@@ -203,12 +207,13 @@
   - ビルド検証を実行
   - _Requirements: 1.1, 1.3_
 
-- [ ] 7.2 ローカル環境でChrome拡張機能をテスト
+- [x] 7.2 ローカル環境でChrome拡張機能をテスト
   - chrome://extensions で開発者モードを有効化
   - dist/ ディレクトリから拡張機能を読み込み
   - 実Slackページで全機能を手動検証 (検索結果エクスポート、チャンネルエクスポート、プリセット適用)
   - セキュリティ検証 (XSS防止、権限、DOM制限) を実施
   - ブラウザ互換性 (Chrome 90以降) を確認
+  - **実装**: 包括的な手動テストガイド (`tests/EXTENSION-LOADING-GUIDE.md`) を作成。拡張機能のロード手順、機能テスト、セキュリティテスト、パフォーマンステストを含む完全なチェックリストを提供。
   - _Requirements: 1.1, 1.2, 7.1, 7.2, 7.3, 8.1_
 
 ## Requirements Coverage

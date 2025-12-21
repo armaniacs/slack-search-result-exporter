@@ -31,7 +31,7 @@ export interface ExportResult {
 }
 
 export interface ExportError {
-  code: "DOM_STRUCTURE_MISMATCH" | "PAGINATION_ERROR" | "EXTRACTION_ERROR" | "UNSUPPORTED_PAGE";
+  code: "DOM_STRUCTURE_MISMATCH" | "PAGINATION_ERROR" | "EXTRACTION_ERROR" | "UNSUPPORTED_PAGE" | "EXPORT_ERROR" | "CLIPBOARD_ERROR";
   message: string;
   partialData?: string[];
 }
@@ -67,9 +67,11 @@ export type ServiceWorkerToPopupMessage =
   | { type: "settings_changed" };
 
 export type PopupToContentScriptMessage =
-  | { type: "START_EXPORT"; options: ExportOptions };
+  | { type: "START_EXPORT"; options: ExportOptions }
+  | { type: "APPLY_DATE_PRESET"; preset: DatePreset; query: string };
 
 export type ContentScriptToPopupMessage =
   | { type: "EXPORT_PROGRESS"; payload: { currentPage: number; messageCount: number } }
   | { type: "EXPORT_COMPLETE"; payload: ExportResult }
-  | { type: "EXPORT_ERROR"; error: ExportError };
+  | { type: "EXPORT_ERROR"; error: ExportError }
+  | { type: "PRESET_APPLIED"; success: boolean; message?: string };

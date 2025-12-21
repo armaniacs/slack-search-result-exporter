@@ -10,9 +10,13 @@
     "test:webkit": "playwright test --project=webkit",
     "test:browser-compat": "playwright test browser-compatibility",
     "test:security": "playwright test security-validation",
+    "test:integration": "npx tsx --test tests/integration",
+    "test:integration:e2e": "playwright test tests/integration",
     "test:ui": "playwright test --ui",
     "test:report": "playwright show-report",
-    "build": "tsc",
+    "build": "npm run build:bundle && npm run build:copy",
+    "build:bundle": "esbuild src/content-script.ts src/popup.ts --bundle --outdir=dist --format=iife --platform=browser --target=chrome90 --sourcemap && esbuild src/service-worker.ts --bundle --outdir=dist --format=esm --platform=browser --target=chrome90 --sourcemap",
+    "build:copy": "mkdir -p dist/icons && cp -r src/icons/* dist/icons/ && cp src/manifest.json src/popup.html src/popup.css dist/",
     "watch": "tsc -w"
   },
   "keywords": [],
@@ -22,6 +26,7 @@
     "@playwright/test": "^1.57.0",
     "@types/chrome": "^0.1.32",
     "@types/node": "^25.0.3",
+    "esbuild": "^0.27.2",
     "typescript": "^5.9.3"
   }
 }

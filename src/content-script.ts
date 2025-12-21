@@ -2,6 +2,7 @@ import { MessageExtractor } from './message-extractor.js';
 import { ChannelExtractor } from './channel-extractor.js';
 import { PaginationController } from './pagination-controller.js';
 import { PageDetector } from './page-detector.js';
+import { SearchQueryApplier } from './search-query-applier.js';
 import {
   MessagePack,
   ExportOptions,
@@ -20,6 +21,7 @@ export class ContentScript {
   private messageExtractor: MessageExtractor;
   private paginationController: PaginationController;
   private pageDetector: PageDetector;
+  private searchQueryApplier: SearchQueryApplier;
   // Reserved for future channel page support (Task 3.3/3.4)
   // @ts-ignore - Will be used when channel page export is implemented
   private _channelExtractor: ChannelExtractor;
@@ -28,38 +30,78 @@ export class ContentScript {
     this.messageExtractor = new MessageExtractor();
     this.paginationController = new PaginationController();
     this.pageDetector = new PageDetector(window.location.href, document);
+    this.searchQueryApplier = new SearchQueryApplier();
     // Reserved for future channel page support (Task 3.3/3.4)
     this._channelExtractor = new ChannelExtractor();
   }
 
   /**
    * Set up chrome.runtime.onMessage listener
-   * Handles START_EXPORT messages from Popup UI
+   * Handles START_EXPORT and APPLY_DATE_PRESET messages from Popup UI
    */
   setupMessageListener(): void {
-    chrome.runtime.onMessage.addListener(
-      (message: PopupToContentScriptMessage, _sender, _sendResponse) => {
+    // @ts-ignore - Explicitly access chrome from window object
+    const chromeAPI = window.chrome || chrome;
+    chromeAPI.runtime.onMessage.addListener(
+      (message: PopupToContentScriptMessage, _sender, sendResponse) => {
         if (message.type === 'START_EXPORT') {
-          // Execute export asynchronously
+          // Execute export asynchronously and send response via sendResponse callback
           this.executeExport(message.options)
             .then(result => {
               if (result.success) {
-                this.sendComplete(result.value);
+                const response: ContentScriptToPopupMessage = {
+                  type: 'EXPORT_COMPLETE',
+                  payload: result.value
+                };
+                sendResponse(response);
               } else {
-                this.sendError(result.error);
+                const response: ContentScriptToPopupMessage = {
+                  type: 'EXPORT_ERROR',
+                  error: result.error
+                };
+                sendResponse(response);
               }
             })
             .catch(error => {
-              this.sendError({
-                code: 'EXTRACTION_ERROR',
-                message: error.message || 'Unknown error occurred',
-                partialData: []
-              });
+              const response: ContentScriptToPopupMessage = {
+                type: 'EXPORT_ERROR',
+                error: {
+                  code: 'EXTRACTION_ERROR',
+                  message: error.message || 'Unknown error occurred',
+                  partialData: []
+                }
+              };
+              sendResponse(response);
             });
 
           // Return true to indicate async response
           return true;
         }
+
+        if (message.type === 'APPLY_DATE_PRESET') {
+          // Apply date preset query asynchronously
+          this.searchQueryApplier.applyQuery(message.query)
+            .then(result => {
+              const response: ContentScriptToPopupMessage = {
+                type: 'PRESET_APPLIED',
+                success: result.success,
+                message: result.message
+              };
+              sendResponse(response);
+            })
+            .catch(error => {
+              const response: ContentScriptToPopupMessage = {
+                type: 'PRESET_APPLIED',
+                success: false,
+                message: error instanceof Error ? error.message : 'プリセット適用に失敗しました'
+              };
+              sendResponse(response);
+            });
+
+          // Return true to indicate async response
+          return true;
+        }
+
         return false;
       }
     );
@@ -109,9 +151,6 @@ export class ContentScript {
 
         pageCount++;
 
-        // Send progress update
-        this.sendProgress(pageCount, messagePack.messages.length);
-
         // Move to next page
         await this.paginationController.clickNextButton(messagePack);
         await this.paginationController.waitMilliseconds(600);
@@ -141,45 +180,6 @@ export class ContentScript {
     }
   }
 
-  /**
-   * Send progress update to Popup UI
-   * @param currentPage - Current page number
-   * @param messageCount - Total messages extracted so far
-   */
-  private sendProgress(currentPage: number, messageCount: number): void {
-    const message: ContentScriptToPopupMessage = {
-      type: 'EXPORT_PROGRESS',
-      payload: {
-        currentPage,
-        messageCount
-      }
-    };
-    chrome.runtime.sendMessage(message);
-  }
-
-  /**
-   * Send export complete message to Popup UI
-   * @param result - Export result data
-   */
-  private sendComplete(result: ExportResult): void {
-    const message: ContentScriptToPopupMessage = {
-      type: 'EXPORT_COMPLETE',
-      payload: result
-    };
-    chrome.runtime.sendMessage(message);
-  }
-
-  /**
-   * Send error message to Popup UI
-   * @param error - Export error details
-   */
-  private sendError(error: ExportError): void {
-    const message: ContentScriptToPopupMessage = {
-      type: 'EXPORT_ERROR',
-      error
-    };
-    chrome.runtime.sendMessage(message);
-  }
 }
 
 // Initialize Content Script when loaded in browser environment

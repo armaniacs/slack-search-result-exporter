@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slack Exporter</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header>
+      <h1>Slack Exporter</h1>
+    </header>
+
+    <section class="preset-selector">
+      <h2>日付フィルタ</h2>
+      <div class="button-group">
+        <button class="preset-button" data-preset="today">当日</button>
+        <button class="preset-button" data-preset="yesterday">昨日</button>
+        <button class="preset-button" data-preset="week">一週間</button>
+        <button class="preset-button" data-preset="month">一ヶ月</button>
+      </div>
+    </section>
+
+    <button id="export-btn" class="export-button">エクスポート</button>
+
+    <div id="progress" class="progress-indicator" style="display:none;">
+      <div class="spinner"></div>
+      <span id="progress-text">エクスポート中...</span>
+    </div>
+
+    <section id="result-section" class="result-section" style="display:none;">
+      <h2>結果</h2>
+      <div class="result-info">
+        <span id="message-count">0</span> 件のメッセージ
+      </div>
+      <textarea id="result-text" readonly></textarea>
+      <button id="copy-btn" class="copy-button">クリップボードにコピー</button>
+    </section>
+
+    <div id="error-message" class="error" style="display:none;"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

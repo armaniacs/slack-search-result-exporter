@@ -1,8 +1,8 @@
 import { RawMessage } from "./types.js";
 
 export class MessageFormatter {
-  // Allowed URL protocols for security filtering
-  private static readonly ALLOWED_PROTOCOLS = /^(https?|mailto):/;
+  // Allowed URL protocols for security filtering (case-insensitive)
+  private static readonly ALLOWED_PROTOCOLS = /^(https?|mailto):/i;
 
   /**
    * Format message data to TSV row

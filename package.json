@@ -8,7 +8,7 @@
     "type": "git",
     "url": "https://github.com/armaniacs/slack-search-result-exporter.git"
   },
-  "keywords": ["slack", "export", "chrome-extension", "tsv", "bookmarklet", "search-results"],
+  "keywords": [],
   "scripts": {
     "test": "playwright test",
     "test:chromium": "playwright test --project=chromium",
@@ -25,7 +25,6 @@
     "build:copy": "mkdir -p dist/icons && cp -r src/icons/* dist/icons/ && cp src/manifest.json src/popup.html src/popup.css dist/",
     "watch": "tsc -w"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {

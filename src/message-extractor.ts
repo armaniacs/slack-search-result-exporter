@@ -1,6 +1,14 @@
 import { MessagePack, RawMessage } from "./types.js";
 import { MessageFormatter } from "./message-formatter.js";
 
+/**
+ * External link data structure
+ */
+interface ExternalLink {
+  text: string;
+  url: string;
+}
+
 export class MessageExtractor {
   private messageGroupSelector = '[role="document"]';
   private messageContentSelector = ".c-search_message__content";
@@ -9,6 +17,81 @@ export class MessageExtractor {
   private channelNameSelector = '[data-qa="inline_channel_entity__name"]';
   private messageSenderSelector = ".c-message__sender_button";
   private timestampLabelSelector = ".c-timestamp__label";
+
+  /**
+   * Extract external URL links from DOM element (http/https only)
+   * @param element - Message element
+   * @returns Array of link text and URL pairs
+   */
+  private extractExternalLinks(element: HTMLElement): ExternalLink[] {
+    if (!element) {
+      return [];
+    }
+
+    const links = element.querySelectorAll<HTMLAnchorElement>('a');
+
+    // Filter only external URLs (http/https) and exclude Slack internal links
+    const externalLinks = Array.from(links)
+      .filter(link => {
+        // Check if URL starts with http/https
+        if (!/^https?:\/\//.test(link.href)) {
+          return false;
+        }
+        // Exclude Slack workspace URLs (e.g., https://xxx.slack.com/...)
+        if (/^https?:\/\/[^/]+\.slack\.com\//.test(link.href)) {
+          return false;
+        }
+        return true;
+      })
+      .map(link => {
+        // Get only the direct text content of the link, excluding nested elements
+        let linkText = '';
+        for (let node of link.childNodes) {
+          if (node.nodeType === Node.TEXT_NODE) {
+            linkText += node.textContent;
+          }
+        }
+        // If no direct text nodes, fall back to textContent (trimmed)
+        if (!linkText.trim()) {
+          linkText = link.textContent?.trim() || '';
+        }
+        return {
+          text: linkText.trim(),
+          url: link.href
+        };
+      });
+
+    return externalLinks;
+  }
+
+  /**
+   * Convert message with Markdown-formatted links
+   * @param message - Original message text
+   * @param links - Array of link objects
+   * @returns Message with Markdown-formatted links
+   */
+  private convertMessageWithMarkdownLinks(message: string, links: ExternalLink[]): string {
+    if (!links || links.length === 0) {
+      return message;
+    }
+
+    let result = message;
+
+    // Replace each link text with Markdown format [text](url)
+    links.forEach(link => {
+      if (!link.text || !link.url) {
+        return;
+      }
+
+      const markdownLink = `[${link.text}](${link.url})`;
+      // Escape special regex characters in link text for safe replacement
+      const escapedText = MessageFormatter.escapeRegExp(link.text);
+      const regex = new RegExp(escapedText, 'g');
+      result = result.replace(regex, markdownLink);
+    });
+
+    return result;
+  }
 
   /**
    * Extract messages from the current page and add them to messagePack
@@ -60,14 +143,17 @@ export class MessageExtractor {
       });
 
       const message = messageClone.textContent || "";
-      
-      // Note: Markdown link conversion and external link extraction will be added in Task 3.5
-      // For now, we implement the basic cleanup and TSV formatting
-      
+
+      /* Extract external links from cleaned clone */
+      const externalLinks = this.extractExternalLinks(messageClone);
+
+      /* Convert message with Markdown-formatted links */
+      const messageWithMarkdownLinks = this.convertMessageWithMarkdownLinks(message, externalLinks);
+
       const removeMessageSender = new RegExp('^' + MessageFormatter.escapeRegExp(messageSender));
       const removeTimestampLabel = new RegExp('^.*?' + MessageFormatter.escapeRegExp(timestampLabel));
-      
-      let trimmedMessage = message.replace(removeMessageSender, '').replace(removeTimestampLabel, '').trim();
+
+      let trimmedMessage = messageWithMarkdownLinks.replace(removeMessageSender, '').replace(removeTimestampLabel, '').trim();
 
       const rawMessage: RawMessage = {
         timestamp: datetime,
@@ -89,17 +175,25 @@ export class MessageExtractor {
 
   /**
    * Wait for search result to be displayed
+   * @throws {Error} if search result is not found within timeout
    */
   async waitForSearchResult(): Promise<void> {
       const selector = ".c-search_message__content";
-      
+      const TIMEOUT_MS = 5000; // 5 seconds timeout
+
       if (document.querySelector(selector)) {
           return;
       }
 
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+              observer.disconnect();
+              reject(new Error('Search results not found. This page may not be a Slack search results page.'));
+          }, TIMEOUT_MS);
+
           const observer = new MutationObserver((_mutations, obs) => {
               if (document.querySelector(selector)) {
+                  clearTimeout(timeoutId);
                   obs.disconnect();
                   resolve();
               }

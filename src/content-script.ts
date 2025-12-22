@@ -153,7 +153,17 @@ export class ContentScript {
           success: false,
           error: {
             code: 'UNSUPPORTED_PAGE',
-            message: 'This page is not supported. Please navigate to a Slack search results or channel page.'
+            message: 'このページはサポートされていません。Slack検索結果ページに移動してください。'
+          }
+        };
+      }
+
+      if (pageType === 'channel') {
+        return {
+          success: false,
+          error: {
+            code: 'UNSUPPORTED_PAGE',
+            message: '現在、チャンネルページのエクスポートは開発中です。Slack検索結果ページ（/search/）をご利用ください。'
           }
         };
       }

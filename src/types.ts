@@ -55,6 +55,14 @@ export interface MessagePack {
   hasNextPage: boolean;
 }
 
+export type ExportStatus = "waiting_for_dom" | "extracting" | "navigating";
+
+export interface ExportProgress {
+  currentPage: number;
+  messageCount: number;
+  status: ExportStatus;
+}
+
 export type PopupToServiceWorkerMessage =
   | { type: "GET_SETTINGS" }
   | { type: "SAVE_SETTINGS"; payload: UserSettings }
@@ -71,7 +79,7 @@ export type PopupToContentScriptMessage =
   | { type: "APPLY_DATE_PRESET"; preset: DatePreset; query: string };
 
 export type ContentScriptToPopupMessage =
-  | { type: "EXPORT_PROGRESS"; payload: { currentPage: number; messageCount: number } }
+  | { type: "EXPORT_PROGRESS"; payload: ExportProgress }
   | { type: "EXPORT_COMPLETE"; payload: ExportResult }
   | { type: "EXPORT_ERROR"; error: ExportError }
   | { type: "PRESET_APPLIED"; success: boolean; message?: string };

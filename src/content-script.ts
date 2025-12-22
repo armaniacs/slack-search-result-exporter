@@ -10,7 +10,8 @@ import {
   ExportError,
   Result,
   PopupToContentScriptMessage,
-  ContentScriptToPopupMessage
+  ContentScriptToPopupMessage,
+  ExportStatus
 } from './types.js';
 
 /**
@@ -33,6 +34,27 @@ export class ContentScript {
     this.searchQueryApplier = new SearchQueryApplier();
     // Reserved for future channel page support (Task 3.3/3.4)
     this._channelExtractor = new ChannelExtractor();
+  }
+
+  /**
+   * Send progress update to Popup UI via chrome.runtime.sendMessage
+   * @param currentPage - Current page number being processed
+   * @param messageCount - Total number of messages extracted so far
+   * @param status - Current operation status
+   */
+  private sendProgress(currentPage: number, messageCount: number, status: ExportStatus): void {
+    try {
+      // @ts-ignore - Explicitly access chrome from window object
+      const chromeAPI = window.chrome || chrome;
+      const message: ContentScriptToPopupMessage = {
+        type: "EXPORT_PROGRESS",
+        payload: { currentPage, messageCount, status }
+      };
+      chromeAPI.runtime.sendMessage(message);
+    } catch (error) {
+      // Log warning but continue execution as per requirement 5.2
+      console.warn("Progress message send failed:", error);
+    }
   }
 
   /**
@@ -140,8 +162,14 @@ export class ContentScript {
 
       // 2. Pagination loop (instead of recursion for memory efficiency)
       while (messagePack.hasNextPage) {
+        // Send progress: Waiting for DOM
+        this.sendProgress(pageCount + 1, messagePack.messages.length, "waiting_for_dom");
+
         // Wait for DOM to be ready
         await this.messageExtractor.waitForSearchResult();
+
+        // Send progress: Extracting
+        this.sendProgress(pageCount + 1, messagePack.messages.length, "extracting");
 
         // Extract messages until no more new messages on current page
         do {
@@ -150,6 +178,9 @@ export class ContentScript {
         } while (messagePack.messagePushed === true);
 
         pageCount++;
+
+        // Send progress: Navigating
+        this.sendProgress(pageCount, messagePack.messages.length, "navigating");
 
         // Move to next page
         await this.paginationController.clickNextButton(messagePack);

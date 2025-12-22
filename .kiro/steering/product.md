@@ -1,24 +1,44 @@
 # Product Overview
 
-A browser-based bookmarklet that exports Slack search results to TSV format, enabling users to save and analyze message data outside of Slack's interface.
+A dual-implementation solution for exporting Slack messages to TSV format: a feature-rich Chrome Extension (recommended) and a lightweight bookmarklet alternative.
 
 ## Core Capabilities
 
-- **Search Result Export**: Automatically paginates through Slack search results and extracts all messages
-- **TSV Format Output**: Exports messages in tab-separated format with timestamp, channel, sender, and content
-- **Multi-page Collection**: Handles pagination to gather messages across multiple result pages
-- **Popup Display**: Presents collected messages in a popup window for easy copying
+### Chrome Extension (Primary Implementation)
+- **One-Click Export**: Toolbar icon activation for instant export from search results or channel pages
+- **Intelligent Page Detection**: Auto-detects Slack page type (search results vs. channel) and applies appropriate extraction logic
+- **Date Filter Presets**: Quick filters (Today, Yesterday, Week, Month) with persistent user preferences
+- **Dual Export Modes**:
+  - Search results with automatic pagination
+  - Channel page message extraction
+- **Enhanced UX**: Modern popup UI with progress indicators, status updates, and clipboard copy
+- **Settings Persistence**: chrome.storage.sync for cross-device preference synchronization
+
+### Bookmarklet (Alternative Implementation)
+- **Zero-Installation**: Runs as browser bookmark, no extension installation required
+- **Core Export Features**: TSV export from search results with Markdown URL conversion
+- **Lightweight**: Single JavaScript file, portable across browsers
 
 ## Target Use Cases
 
-- **Personal Data Export**: Users wanting to archive their own Slack messages matching specific criteria
-- **Search History Preservation**: Saving important search results for offline reference or analysis
-- **Data Migration**: Exporting Slack data for use in other tools or platforms
-- **Record Keeping**: Creating backups of specific conversations or time periods
+### Primary (Extension)
+- **Power Users**: Frequent Slack exporters who benefit from date presets and saved settings
+- **Channel Archiving**: Users needing to export channel conversations (Extension-only feature)
+- **Cross-Device Users**: Chrome users who want settings synchronized across devices
+- **UX-Focused Users**: Those preferring modern UI with progress indicators and one-click operations
+
+### Secondary (Bookmarklet)
+- **Minimal Setup Users**: Users who cannot or prefer not to install browser extensions
+- **Portability Seekers**: Users who want the same tool across different browsers or machines
+- **Simple Export Needs**: Users who only need basic search result export without advanced features
 
 ## Value Proposition
 
-Provides a lightweight, client-side solution for exporting Slack search results without requiring OAuth apps, server infrastructure, or API tokens. Works directly in the browser as a bookmarklet, making it accessible to any Slack user.
+**Chrome Extension**: Provides a modern, feature-rich experience with persistent settings, date presets, channel export, and superior UX - the recommended solution for regular Slack exporters.
+
+**Bookmarklet**: Offers a lightweight, zero-installation alternative maintaining core export functionality for users prioritizing simplicity and portability.
+
+Both implementations share the same TSV export format, ensuring consistency and allowing users to switch between implementations without workflow disruption.
 
 ---
 _Focus on patterns and purpose, not exhaustive feature lists_

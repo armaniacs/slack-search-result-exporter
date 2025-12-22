@@ -183,11 +183,12 @@ describe('Task 6.1.2: Message Type Compatibility', () => {
     // EXPORT_PROGRESS
     const progressMsg: ContentScriptToPopupMessage = {
       type: 'EXPORT_PROGRESS',
-      payload: { currentPage: 2, messageCount: 50 }
+      payload: { currentPage: 2, messageCount: 50, status: 'extracting' }
     };
     assert.strictEqual(progressMsg.type, 'EXPORT_PROGRESS');
     assert.strictEqual(progressMsg.payload.currentPage, 2);
     assert.strictEqual(progressMsg.payload.messageCount, 50);
+    assert.strictEqual(progressMsg.payload.status, 'extracting');
 
     // EXPORT_COMPLETE
     const completeMsg: ContentScriptToPopupMessage = {

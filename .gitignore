@@ -32,3 +32,14 @@ dist/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Claude Code / AI development files
+.claude/
+*.md.plan
+
+# Personal development notes
+TODO.md
+NOTES.md
+
+# VSCode settings (optional - remove if you want to commit)
+# .vscode/

@@ -1,5 +1,60 @@
 # Release Notes
 
+## v2.0.0 - 2025-12-22
+
+### 🎉 Chrome Extension Release
+
+Major release introducing Chrome Extension as the primary implementation with enhanced features while maintaining full bookmarklet support.
+
+### ✨ New Features
+
+#### Chrome Extension (NEW - Recommended)
+- **One-Click Export**: Toolbar icon click to export from search results or channel pages
+- **Auto Page Detection**: Automatically detects search results vs. channel pages
+- **Date Filter Presets**: Quick filters for Today, Yesterday, Week, Month
+- **Persistent Settings**: User preferences saved via chrome.storage.sync
+- **Channel Export**: Export messages from channel pages (Extension-only)
+- **Enhanced UI**: Modern popup with progress indicators and status updates
+- **Clipboard Copy**: One-click copy to clipboard
+- **Settings Sync**: Preferences synchronized across Chrome browsers
+
+#### Technical Implementation
+- **Architecture**: Manifest V3 with Content Script + Service Worker + Popup UI
+- **TypeScript**: Full TypeScript implementation with strict mode
+- **Build System**: esbuild for bundling and optimization
+- **Testing**: Integration and E2E tests for Extension workflows
+
+### 🔄 Bookmarklet (Maintained)
+- All v1.0.0 features maintained
+- Continues to work for users who prefer zero-installation
+- Same export format and security features
+- Recommended as lightweight alternative
+
+### 📚 Documentation Updates
+- **README**: Restructured with Extension-first approach
+- **Installation**: Separate guides for Extension vs. Bookmarklet
+- **Comparison Table**: Clear feature differentiation
+- **Migration Guide**: Guidance for existing bookmarklet users
+- **Chrome Web Store**: Request banner for future publication
+
+### 🔧 Repository Updates
+- **Repository**: Moved to armaniacs organization
+- **URLs**: All GitHub links updated to armaniacs
+- **Demo Video**: TBD (coming soon with Extension demonstration)
+
+### 🛠️ Breaking Changes
+None - bookmarklet continues to work exactly as before.
+
+### 📦 Installation
+
+#### Chrome Extension (Recommended)
+See [Installation Guide - Chrome Extension](README.md#chrome-extension-recommended)
+
+#### Bookmarklet (Alternative)
+See [Installation Guide - Bookmarklet](README.md#bookmarklet-alternative)
+
+---
+
 ## v1.0.0 - 2025-12-18
 
 ### 🎉 Initial Release
@@ -121,7 +176,7 @@ First stable release of Slack Search Result Exporter with comprehensive Markdown
 ### 🔧 Installation
 
 #### Quick Install (Recommended)
-1. Open [slack-search-result-exporter.user.js](https://github.com/xshoji/slack-search-result-exporter/blob/main/slack-search-result-exporter.user.js)
+1. Open [slack-search-result-exporter.user.js](https://github.com/armaniacs/slack-search-result-exporter/blob/main/slack-search-result-exporter.user.js)
 2. Copy entire file contents
 3. Create browser bookmark with copied code as URL
 
@@ -146,7 +201,7 @@ First stable release of Slack Search Result Exporter with comprehensive Markdown
 
 ### 🔗 Links
 
-- **Repository**: https://github.com/xshoji/slack-search-result-exporter
+- **Repository**: https://github.com/armaniacs/slack-search-result-exporter
 - **Documentation**: See README.md
 - **Technical Reference**: See ref/ directory
 - **Issue Tracker**: GitHub Issues

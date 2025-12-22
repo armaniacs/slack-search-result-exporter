@@ -4,6 +4,7 @@ import type {
   DatePreset,
   ExportResult,
   ExportError,
+  ExportProgress,
   PopupToServiceWorkerMessage,
   ServiceWorkerToPopupMessage,
   PopupToContentScriptMessage,
@@ -15,17 +16,18 @@ import { formatUserError } from './error-messages.js';
 /**
  * Popup UI State
  */
-interface PopupUIState {
+export interface PopupUIState {
   selectedPreset: DatePreset;
   isExporting: boolean;
   exportResult: ExportResult | null;
   error: ExportError | null;
+  exportProgress: ExportProgress | null;
 }
 
 /**
  * Popup UI Controller
  */
-class PopupUIController {
+export class PopupUIController {
   private state: PopupUIState;
   private datePresetManager: DatePresetManager;
   private elements: {
@@ -46,7 +48,8 @@ class PopupUIController {
       selectedPreset: 'week', // Default preset
       isExporting: false,
       exportResult: null,
-      error: null
+      error: null,
+      exportProgress: null
     };
 
     // Get DOM elements
@@ -63,6 +66,7 @@ class PopupUIController {
     };
 
     this.init();
+    this.setupProgressListener();
   }
 
   /**
@@ -71,6 +75,20 @@ class PopupUIController {
   private async init(): Promise<void> {
     await this.loadSettings();
     this.attachEventListeners();
+  }
+
+  /**
+   * Set up listener for progress messages from content script
+   */
+  private setupProgressListener(): void {
+    chrome.runtime.onMessage.addListener(
+      (message: ContentScriptToPopupMessage) => {
+        if (message.type === 'EXPORT_PROGRESS') {
+          this.state.exportProgress = message.payload;
+          this.updateUI();
+        }
+      }
+    );
   }
 
   /**
@@ -341,10 +359,34 @@ class PopupUIController {
     // Update progress indicator
     if (this.state.isExporting) {
       this.elements.progress.style.display = 'flex';
+
+      if (this.state.exportProgress) {
+        const { currentPage, messageCount, status } = this.state.exportProgress;
+        let statusText = '';
+
+        switch (status) {
+          case 'waiting_for_dom':
+            statusText = ' - DOM読み込み待機中...';
+            break;
+          case 'extracting':
+            statusText = ' - メッセージ抽出中...';
+            break;
+          case 'navigating':
+            statusText = ' - 次ページへ移動中...';
+            break;
+        }
+
+        this.elements.progressText.textContent =
+          `ページ ${currentPage} 処理中 (${messageCount} メッセージ)${statusText}`;
+      } else {
+        this.elements.progressText.textContent = 'エクスポート中...';
+      }
+
       this.elements.resultSection.style.display = 'none';
       this.elements.errorMessage.style.display = 'none';
     } else {
       this.elements.progress.style.display = 'none';
+      this.state.exportProgress = null; // Reset progress when done
     }
 
     // Update result section

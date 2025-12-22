@@ -1,34 +1,71 @@
 # slack-search-result-exporter
 
-Exports Slack messages as TSV from Search results.
+Export Slack messages as TSV from search results and channels - available as a Chrome Extension or bookmarklet.
 
-[Demo Video](https://github.com/user-attachments/assets/95238129-c958-40c7-8fb0-63a151d1d45b)
+**🎯 Recommended: [Install Chrome Extension](#chrome-extension-recommended) for the best experience**
+
+**Demo Video**: TBD (Coming soon with Chrome Extension demonstration)
 
 ## Features
 
-✅ **Markdown URL Conversion**
-- Converts external URLs to `[text](url)` format
-- Preserves internal links (#channel references) unchanged
-- Example: `Check out https://github.com` → `Check out [https://github.com](https://github.com/)`
+### Chrome Extension (Recommended)
 
-✅ **Link Preview Exclusion**
-- Automatically removes Slack's link preview text (unfurl content)
-- Prevents duplicate URL text in exports
-- Excludes `.c-search_message__attachments` elements
+✅ **One-Click Export**
+- Click toolbar icon to instantly export from any Slack page
+- Auto-detects search results vs. channel pages
+- No manual bookmark setup required
 
-✅ **Multi-line Message Support**
-- Converts newlines to `<br>` tags for TSV compatibility
-- Maintains single-line TSV format
-- Example: `Line 1\nLine 2` → `Line 1<br>Line 2`
+✅ **Date Filter Presets**
+- Quick filters: Today, Yesterday, Week, Month
+- Persistent settings across sessions
+- Synchronized across Chrome browsers (chrome.storage.sync)
 
-✅ **Slack Internal Link Filtering**
-- Excludes `*.slack.com` workspace internal links
-- Only exports genuine external URLs
+✅ **Enhanced Export Capabilities**
+- Search result pages with automatic pagination
+- Channel page message export (Extension-only feature)
+- Progress indicators and loading states
 
-✅ **TSV Data Export**
-- Tab-separated values format
-- 4 columns: DateTime | Channel | Sender | Message
-- Special character escaping for data integrity
+✅ **Better User Experience**
+- Modern popup UI with clear status updates
+- One-click clipboard copy
+- Visual feedback for all operations
+
+✅ **All Core Features**
+- Markdown URL conversion
+- Link preview exclusion
+- Multi-line message support
+- TSV format export
+- XSS protection and security
+
+### Bookmarklet (Lightweight Alternative)
+
+✅ **Core Export Features**
+- Markdown URL conversion
+- Link preview exclusion
+- Multi-line message support
+- TSV format export
+- XSS protection
+
+⚠️ **Limitations**
+- Search results only (no channel export)
+- No date presets
+- No settings persistence
+- Manual execution required
+
+## Which Version Should I Use?
+
+| Feature | Chrome Extension | Bookmarklet |
+|---------|-----------------|-------------|
+| One-click operation | ✅ | ❌ (manual click) |
+| Date filter presets | ✅ | ❌ |
+| Settings persistence | ✅ | ❌ |
+| Channel page export | ✅ | ❌ |
+| Search result export | ✅ | ✅ |
+| Installation required | ✅ | ❌ |
+| Progress indicators | ✅ | ⚠️ Basic |
+| Clipboard copy button | ✅ | ❌ |
+| Chrome Web Store install | 🔜 Coming if requested | - |
+| **Recommended for** | Most users | Minimal setup, portability |
 
 ## Output Format
 
@@ -52,33 +89,69 @@ Exported data is in TSV (Tab-Separated Values) format with 4 columns:
 
 ## Installation
 
-### Option 1: Quick Install (Recommended)
+> 💡 **Want easier installation via Chrome Web Store?**
+>
+> We're considering publishing this extension to the Chrome Web Store for one-click installation.
+> If you'd like this feature, please let us know by [creating an issue](https://github.com/armaniacs/slack-search-result-exporter/issues/new) or reacting with 👍
+>
+> **[Request Chrome Web Store Publication →](https://github.com/armaniacs/slack-search-result-exporter/issues/new?title=Request:%20Chrome%20Web%20Store%20Publication&body=I%20would%20like%20to%20install%20this%20extension%20from%20the%20Chrome%20Web%20Store%20for%20easier%20installation.)**
+>
+> _The more requests we receive, the higher priority this becomes!_
+
+## Chrome Extension (Recommended)
+
+### Option 1: Chrome Web Store (Coming Soon)
+If we receive enough requests, we'll publish to the Chrome Web Store for one-click installation. Please use the banner above to request!
+
+### Option 2: Developer Mode (Currently Available)
+1. Download this repository
+2. Run `npm run build` to build the extension
+3. Open Chrome → Extensions (chrome://extensions/)
+4. Enable "Developer mode"
+5. Click "Load unpacked"
+6. Select the `dist/` folder
+7. Pin the extension icon to your toolbar
+
+## Bookmarklet (Alternative)
+
+Perfect if you prefer zero-installation or need portability.
+
+### Quick Install
 1. Open [slack-search-result-exporter.user.js](slack-search-result-exporter.user.js)
 2. Copy the **entire file contents** (starts with `javascript:(function(){...`)
-3. Create a new bookmark in your browser:
-   - **Chrome**: Bookmarks → Add page (Cmd/Ctrl+D)
-   - **Firefox**: Bookmarks → Add bookmark
-   - **Safari**: Bookmarks → Add bookmark
-4. Edit the bookmark:
+3. Create a new bookmark:
    - **Name**: `Export Slack Search` (or any name you prefer)
    - **URL**: Paste the copied JavaScript code
-5. Save the bookmark
+4. Save the bookmark
 
-### Option 2: Manual Copy
+### Manual Install
 1. Open [slack-search-result-exporter.js](slack-search-result-exporter.js)
 2. Copy entire contents
 3. Wrap with `javascript:(` at start and `);` at end
-4. Follow steps 3-5 above
-
-**Note**: The `.user.js` file is pre-formatted for direct use. The `.js` file is the source code.
+4. Follow steps 3-4 above
 
 ## Usage
 
-1. Open slack.com
-2. Search messages and wait for results
-3. Click the bookmarklet
+### Using Chrome Extension
 
-\* Please allow the popup window.
+1. Navigate to Slack (slack.com)
+2. Open a search results page OR channel page
+3. Click the extension icon in your toolbar
+4. (Optional) Select a date preset filter
+5. Click "Export"
+6. Copy results from the popup
+
+**Pro Tip**: Use date presets for common searches. Your last selection is saved automatically.
+
+### Using Bookmarklet
+
+1. Open slack.com
+2. Search messages and wait for results to load
+3. Click the bookmarklet in your bookmarks bar
+4. Allow popup window
+5. Copy TSV data from popup
+
+**Note**: Bookmarklet only works on search result pages, not channels.
 
 # Tips for Searching in Slack
 
@@ -145,6 +218,19 @@ See #general channel and https://example.com
 2025-12-17 Wed 19:46:51	test_channel	John Doe	See #general channel and [https://example.com](https://example.com/)
 ```
 *Note: Internal #channel links are preserved, only external URLs are converted.*
+
+## Migrating from Bookmarklet to Extension
+
+Already using the bookmarklet? Here's why you should upgrade:
+
+1. **Save Time**: No more manual bookmark clicks
+2. **Better Features**: Date presets, channel export, persistent settings
+3. **Same Export Format**: Your existing workflows still work
+
+**Migration Steps**:
+1. Install Chrome Extension using the steps above
+2. (Optional) Keep bookmarklet as backup
+3. Start using the extension - your exported data format is identical
 
 # Testing
 

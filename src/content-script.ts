@@ -3,6 +3,7 @@ import { ChannelExtractor } from './channel-extractor.js';
 import { PaginationController } from './pagination-controller.js';
 import { PageDetector } from './page-detector.js';
 import { SearchQueryApplier } from './search-query-applier.js';
+import { DatePresetManager } from './date-preset-manager.js';
 import {
   MessagePack,
   ExportOptions,
@@ -23,6 +24,7 @@ export class ContentScript {
   private paginationController: PaginationController;
   private pageDetector: PageDetector;
   private searchQueryApplier: SearchQueryApplier;
+  private datePresetManager: DatePresetManager;
   // Reserved for future channel page support (Task 3.3/3.4)
   // @ts-ignore - Will be used when channel page export is implemented
   private _channelExtractor: ChannelExtractor;
@@ -32,6 +34,7 @@ export class ContentScript {
     this.paginationController = new PaginationController();
     this.pageDetector = new PageDetector(window.location.href, document);
     this.searchQueryApplier = new SearchQueryApplier();
+    this.datePresetManager = new DatePresetManager();
     // Reserved for future channel page support (Task 3.3/3.4)
     this._channelExtractor = new ChannelExtractor();
   }
@@ -135,7 +138,7 @@ export class ContentScript {
    * @param options - Export options (e.g., date preset)
    * @returns Result containing exported messages or error
    */
-  async executeExport(_options: ExportOptions): Promise<Result<ExportResult, ExportError>> {
+  async executeExport(options: ExportOptions): Promise<Result<ExportResult, ExportError>> {
     // Initialize message pack outside try block to preserve partial data on error
     const messagePack: MessagePack = {
       messages: [],
@@ -143,6 +146,15 @@ export class ContentScript {
       messagePushed: false,
       hasNextPage: true
     };
+
+    // Calculate start date if preset is provided
+    let startDate: Date | undefined;
+    if (options.datePreset) {
+      const range = this.datePresetManager.calculateDateRange(options.datePreset);
+      startDate = range.startDate;
+      // Set to beginning of the day (00:00:00)
+      startDate.setHours(0, 0, 0, 0);
+    }
 
     try {
       // 1. Detect page type
@@ -184,7 +196,7 @@ export class ContentScript {
         // Extract messages until no more new messages on current page
         do {
           await this.paginationController.waitMilliseconds(800);
-          await this.messageExtractor.extractMessages(messagePack);
+          await this.messageExtractor.extractMessages(messagePack, startDate);
         } while (messagePack.messagePushed === true);
 
         pageCount++;

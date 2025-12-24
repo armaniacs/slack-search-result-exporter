@@ -3,14 +3,25 @@
   "name": "Slack Search Result Exporter",
   "version": "1.0.0",
   "description": "Export Slack search results and channel messages to TSV format",
-  "permissions": ["activeTab", "storage", "scripting"],
-  "host_permissions": ["*://*.slack.com/*"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.slack.com/*"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
   "background": {
     "service_worker": "service-worker.js",
     "type": "module"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
   "action": {
     "default_popup": "popup.html",

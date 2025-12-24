@@ -29,8 +29,17 @@ export class SearchQueryApplier {
       // Add new date query
       const newQuery = cleanedQuery.trim() ? `${cleanedQuery} ${query}` : query;
 
-      // Set new query value
-      searchInput.value = newQuery;
+      // Set new query value using prototype setter to bypass React 15/16+ input masking
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype,
+        'value'
+      )?.set;
+
+      if (nativeInputValueSetter) {
+        nativeInputValueSetter.call(searchInput, newQuery);
+      } else {
+        searchInput.value = newQuery;
+      }
 
       // Trigger input event to notify Slack of the change
       const inputEvent = new Event('input', { bubbles: true });

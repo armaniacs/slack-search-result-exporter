@@ -8,7 +8,12 @@ function handleMessage(
   _sender: chrome.runtime.MessageSender,
   sendResponse: (response?: ServiceWorkerToPopupMessage) => void
 ): boolean | undefined {
-  
+
+  if (!message || typeof message !== 'object' || !('type' in message)) {
+    console.warn('Invalid message received in service worker');
+    return false;
+  }
+
   const msg = message as PopupToServiceWorkerMessage;
 
   (async () => {
@@ -25,8 +30,8 @@ function handleMessage(
         }
         case 'SAVE_SETTINGS': {
           if (!msg.payload) {
-             // Runtime check for payload
-             return; 
+            // Runtime check for payload
+            return;
           }
           const result = await settingsManager.setAll(msg.payload);
           if (result.success) {
@@ -47,8 +52,8 @@ function handleMessage(
         }
       }
     } catch (error) {
-       console.error("Service Worker Error:", error);
-       // Optional: send error response if possible
+      console.error("Service Worker Error:", error);
+      // Optional: send error response if possible
     }
   })();
 

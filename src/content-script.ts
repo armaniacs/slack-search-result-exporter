@@ -69,6 +69,12 @@ export class ContentScript {
     const chromeAPI = window.chrome || chrome;
     chromeAPI.runtime.onMessage.addListener(
       (message: PopupToContentScriptMessage, _sender, sendResponse) => {
+        // Validate message structure
+        if (!message || typeof message !== 'object' || !('type' in message)) {
+          console.warn('Invalid message received in content script');
+          return false;
+        }
+
         if (message.type === 'START_EXPORT') {
           // Execute export asynchronously and send response via sendResponse callback
           this.executeExport(message.options)

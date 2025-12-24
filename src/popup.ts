@@ -83,6 +83,10 @@ export class PopupUIController {
   private setupProgressListener(): void {
     chrome.runtime.onMessage.addListener(
       (message: ContentScriptToPopupMessage) => {
+        // Validate message structure
+        if (!message || typeof message !== 'object' || !('type' in message)) {
+          return;
+        }
         if (message.type === 'EXPORT_PROGRESS') {
           this.state.exportProgress = message.payload;
           this.updateUI();
